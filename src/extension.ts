@@ -82,7 +82,7 @@ export function activate(context: ExtensionContext) {
 
 			while (current = regex.exec(text)) {
 				const line = text.slice(0, current.index).split("\n").length - 1;
-				const startPos = new Position(line, current.index - lines.slice(0, line).join("\n").length);
+				const startPos = new Position(line, current.index - lines.slice(0, line).join("\n").length - Number(!!line));
 
 				let ranges = colourRanges.get(current[0][1]);
 
