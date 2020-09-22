@@ -67,9 +67,9 @@ const colourMap: Record<string, string> = {
 
 const decorations: TextEditorDecorationType[] = [];
 
-export function activate(context: ExtensionContext) {
-	window.onDidChangeActiveTextEditor(colour, null, context.subscriptions);
-	workspace.onDidChangeTextDocument(colour, null, context.subscriptions);
+export function activate() {
+	window.onDidChangeActiveTextEditor(colour);
+	workspace.onDidChangeTextDocument(colour);
 
 	colour();
 }
@@ -78,71 +78,75 @@ export function deactivate() {}
 
 function colour() {
 	if (window.activeTextEditor) {
+		const { positionAt, languageId } = window.activeTextEditor.document;
+		const text = window.activeTextEditor.document.getText();
+		const coloursRanges = new Map<string, Range[]>();
+		const stringRanges: Range[] = [];
+		const strikeRanges: Range[] = [];
+
 		for (const decoration of decorations.splice(0)) {
 			decoration.dispose();
 		}
 
-		const text = window.activeTextEditor.document.getText();
-		const stringRegex = /""|''|".*?[^\\]"|'.*?[^\\]'/gs;
-		const coloursRanges = new Map<string, Range[]>();
-		const stringRanges: Range[] = [];
-		const strikeRanges: Range[] = [];
-		const lines = text.split("\n");
+		switch (languageId) {
+			case "javascript":
+			case "typescript":
+				for (const { index: stringIndex, match: stringMatch } of matches(/""|''|".*?[^\\]"|'.*?[^\\]'/gs, text)) {
+					if (stringMatch.length > 2) {
+						stringRanges.push(new Range(positionAt(stringIndex + 1), positionAt(stringIndex + stringMatch.length - 1)));
 
-		let currentString;
+						for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
+							const offset = stringIndex + index;
+							const startPos = positionAt(offset);
+							const innerStartPos = positionAt(offset + 2);
+							const innerEndPos = positionAt(offset + match.length - 1);
+							const endPos = positionAt(offset + match.length);
 
-		while (currentString = stringRegex.exec(text)) {
-			const { 0: stringString, index: stringIndex } = currentString;
+							let colourRanges = coloursRanges.get(match[1]);
 
-			if (stringString.length > 2) {
-				const line = text.slice(0, stringIndex).split("\n").length - 1;
-				const stringStartPos = new Position(line, stringIndex - lines.slice(0, line).join("\n").length - Number(!!line));
+							if (!colourRanges) {
+								colourRanges = [];
+								coloursRanges.set(match[1], colourRanges);
+							}
 
-				stringRanges.push(new Range(stringStartPos.translate(0, 1), stringStartPos.translate(0, stringString.length - 1)));
-
-				{
-					const colourRegex = /`[^\W_]((?!`|\\n).)+`/g;
-
-					let current;
-
-					while (current = colourRegex.exec(stringString)) {
-						const { 0: colourString, index: colourIndex } = current;
-						const startPos = stringStartPos.translate(0, colourIndex);
-
-						let colourRanges = coloursRanges.get(colourString[1]);
-
-						if (!colourRanges) {
-							colourRanges = [];
-							coloursRanges.set(colourString[1], colourRanges);
+							colourRanges.push(new Range(innerStartPos, innerEndPos));
+							strikeRanges.push(new Range(startPos, innerStartPos));
+							strikeRanges.push(new Range(innerEndPos, endPos));
 						}
 
-						const innerStartPos = startPos.translate(0, 2);
-						const innerEndPos = startPos.translate(0, colourString.length - 1);
-						const endPos = startPos.translate(0, colourString.length);
-
-						colourRanges.push(new Range(innerStartPos, innerEndPos));
-
-						strikeRanges.push(new Range(startPos, innerStartPos));
-						strikeRanges.push(new Range(innerEndPos, endPos));
+						for (const { index, match } of matches(/\\n|\\t/g, stringMatch)) {
+							const offset = stringIndex + index;
+							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + match.length)));
+						}
 					}
 				}
 
-				{
-					const whitespaceRegex = /\\n|\\t/g;
+				break;
+			case "plaintext":
+				stringRanges.push(new Range(positionAt(0), positionAt(text.length)));
 
-					let current;
+				for (const { index, match } of matches(/`[^\W_][^`]+`/g, text)) {
+					const startPos = positionAt(index);
+					const innerStartPos = positionAt(index + 2);
+					const innerEndPos = positionAt(index + match.length - 1);
+					const endPos = positionAt(index + match.length);
 
-					while (current = whitespaceRegex.exec(stringString)) {
-						const { 0: whitespaceString, index: whitespaceIndex } = current;
-						const startPos = stringStartPos.translate(0, whitespaceIndex);
+					let colourRanges = coloursRanges.get(match[1]);
 
-						strikeRanges.push(new Range(startPos, startPos.translate(0, whitespaceString.length)));
+					if (!colourRanges) {
+						colourRanges = [];
+						coloursRanges.set(match[1], colourRanges);
 					}
+
+					colourRanges.push(new Range(innerStartPos, innerEndPos));
+					strikeRanges.push(new Range(startPos, innerStartPos));
+					strikeRanges.push(new Range(innerEndPos, endPos));
 				}
-			}
+
+				break;
 		}
 
-		for (let [ colourID, ranges ] of coloursRanges) {
+		for (const [ colourID, ranges ] of coloursRanges) {
 			const decoration = window.createTextEditorDecorationType({
 				color: `#${colourMap[colourID]}`
 			});
@@ -172,5 +176,13 @@ function colour() {
 
 			window.activeTextEditor.setDecorations(decoration, stringRanges);
 		}
+	}
+}
+
+function* matches(regex: RegExp, string: string) {
+	let current;
+
+	while (current = regex.exec(string)) {
+		yield { index: current.index, match: current[0] };
 	}
 }

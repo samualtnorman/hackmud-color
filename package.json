@@ -1,8 +1,8 @@
 {
 	"name": "hackmud-color",
-	"displayName": "hackmud-color",
+	"displayName": "Hackmud Colour",
 	"description": "Colours text like hackmud",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.49.0"
 	},
@@ -10,7 +10,6 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:hackmud-color.color",
 		"onLanguage:plaintext",
 		"onLanguage:javascript",
 		"onLanguage:typescript"
