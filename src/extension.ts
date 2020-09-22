@@ -83,7 +83,7 @@ function colour() {
 		}
 
 		const text = window.activeTextEditor.document.getText();
-		const stringRegex = /".*?[^\\]"|'.*?[^\\]'/gs;
+		const stringRegex = /""|''|".*?[^\\]"|'.*?[^\\]'/gs;
 		const coloursRanges = new Map<string, Range[]>();
 		const stringRanges: Range[] = [];
 		const strikeRanges: Range[] = [];
@@ -94,34 +94,51 @@ function colour() {
 		while (currentString = stringRegex.exec(text)) {
 			const { 0: stringString, index: stringIndex } = currentString;
 
-			const line = text.slice(0, stringIndex).split("\n").length - 1;
-			const stringStartPos = new Position(line, stringIndex - lines.slice(0, line).join("\n").length - Number(!!line));
+			if (stringString.length > 2) {
+				const line = text.slice(0, stringIndex).split("\n").length - 1;
+				const stringStartPos = new Position(line, stringIndex - lines.slice(0, line).join("\n").length - Number(!!line));
 
-			stringRanges.push(new Range(stringStartPos.translate(0, 1), stringStartPos.translate(0, stringString.length - 1)));
+				stringRanges.push(new Range(stringStartPos.translate(0, 1), stringStartPos.translate(0, stringString.length - 1)));
 
-			const colourRegex = /`[^\W_][^`]+`/g;
+				{
+					const colourRegex = /`[^\W_]((?!`|\\n).)+`/g;
 
-			let current;
+					let current;
 
-			while (current = colourRegex.exec(stringString)) {
-				const { 0: colourString, index: colourIndex } = current;
-				const startPos = stringStartPos.translate(0, colourIndex);
+					while (current = colourRegex.exec(stringString)) {
+						const { 0: colourString, index: colourIndex } = current;
+						const startPos = stringStartPos.translate(0, colourIndex);
 
-				let colourRanges = coloursRanges.get(colourString[1]);
+						let colourRanges = coloursRanges.get(colourString[1]);
 
-				if (!colourRanges) {
-					colourRanges = [];
-					coloursRanges.set(colourString[1], colourRanges);
+						if (!colourRanges) {
+							colourRanges = [];
+							coloursRanges.set(colourString[1], colourRanges);
+						}
+
+						const innerStartPos = startPos.translate(0, 2);
+						const innerEndPos = startPos.translate(0, colourString.length - 1);
+						const endPos = startPos.translate(0, colourString.length);
+
+						colourRanges.push(new Range(innerStartPos, innerEndPos));
+
+						strikeRanges.push(new Range(startPos, innerStartPos));
+						strikeRanges.push(new Range(innerEndPos, endPos));
+					}
 				}
 
-				const innerStartPos = startPos.translate(0, 2);
-				const innerEndPos = startPos.translate(0, colourString.length - 1);
-				const endPos = startPos.translate(0, colourString.length);
+				{
+					const whitespaceRegex = /\\n|\\t/g;
 
-				colourRanges.push(new Range(innerStartPos, innerEndPos));
+					let current;
 
-				strikeRanges.push(new Range(startPos, innerStartPos));
-				strikeRanges.push(new Range(innerEndPos, endPos));
+					while (current = whitespaceRegex.exec(stringString)) {
+						const { 0: whitespaceString, index: whitespaceIndex } = current;
+						const startPos = stringStartPos.translate(0, whitespaceIndex);
+
+						strikeRanges.push(new Range(startPos, startPos.translate(0, whitespaceString.length)));
+					}
+				}
 			}
 		}
 
@@ -138,7 +155,7 @@ function colour() {
 		{
 			const decoration = window.createTextEditorDecorationType({
 				textDecoration: "line-through",
-				opacity: "0.15"
+				opacity: "0.3"
 			});
 
 			decorations.push(decoration);
