@@ -68,60 +68,74 @@ const colourMap: Record<string, string> = {
 const decorations: TextEditorDecorationType[] = [];
 
 export function activate(context: ExtensionContext) {
-	console.log("activated");
 	window.onDidChangeActiveTextEditor(colour, null, context.subscriptions);
 	workspace.onDidChangeTextDocument(colour, null, context.subscriptions);
 
-	function colour() {
-		console.log("colouring");
+	colour();
+}
 
-		if (window.activeTextEditor) {
-			for (const decoration of decorations) {
-				decoration.dispose();
-			}
+export function deactivate() {}
 
-			decorations.splice(0, decorations.length);
+function colour() {
+	if (window.activeTextEditor) {
+		for (const decoration of decorations.splice(0)) {
+			decoration.dispose();
+		}
 
-			const text = window.activeTextEditor.document.getText();
-			const regex = /`[^\W_][^`]+`/g;
-			const coloursRanges = new Map<string, Range[]>();
-			const strikeRanges: Range[] = [];
-			const lines = text.split("\n");
+		const text = window.activeTextEditor.document.getText();
+		const stringRegex = /".*?[^\\]"|'.*?[^\\]'/gs;
+		const coloursRanges = new Map<string, Range[]>();
+		const stringRanges: Range[] = [];
+		const strikeRanges: Range[] = [];
+		const lines = text.split("\n");
+
+		let currentString;
+
+		while (currentString = stringRegex.exec(text)) {
+			const { 0: stringString, index: stringIndex } = currentString;
+
+			const line = text.slice(0, stringIndex).split("\n").length - 1;
+			const stringStartPos = new Position(line, stringIndex - lines.slice(0, line).join("\n").length - Number(!!line));
+
+			stringRanges.push(new Range(stringStartPos.translate(0, 1), stringStartPos.translate(0, stringString.length - 1)));
+
+			const colourRegex = /`[^\W_][^`]+`/g;
 
 			let current;
 
-			while (current = regex.exec(text)) {
-				const { 0: string, index } = current;
-				const line = text.slice(0, index).split("\n").length - 1;
-				const startPos = new Position(line, index - lines.slice(0, line).join("\n").length - Number(!!line));
+			while (current = colourRegex.exec(stringString)) {
+				const { 0: colourString, index: colourIndex } = current;
+				const startPos = stringStartPos.translate(0, colourIndex);
 
-				let colourRanges = coloursRanges.get(string[1]);
+				let colourRanges = coloursRanges.get(colourString[1]);
 
 				if (!colourRanges) {
 					colourRanges = [];
-					coloursRanges.set(string[1], colourRanges);
+					coloursRanges.set(colourString[1], colourRanges);
 				}
 
 				const innerStartPos = startPos.translate(0, 2);
-				const innerEndPos = startPos.translate(0, string.length - 1);
-				const endPos = startPos.translate(0, string.length);
+				const innerEndPos = startPos.translate(0, colourString.length - 1);
+				const endPos = startPos.translate(0, colourString.length);
 
 				colourRanges.push(new Range(innerStartPos, innerEndPos));
 
 				strikeRanges.push(new Range(startPos, innerStartPos));
 				strikeRanges.push(new Range(innerEndPos, endPos));
 			}
+		}
 
-			for (let [ colourID, ranges ] of coloursRanges) {
-				const decoration = window.createTextEditorDecorationType({
-					color: `#${colourMap[colourID]}`
-				});
+		for (let [ colourID, ranges ] of coloursRanges) {
+			const decoration = window.createTextEditorDecorationType({
+				color: `#${colourMap[colourID]}`
+			});
 
-				decorations.push(decoration);
+			decorations.push(decoration);
 
-				window.activeTextEditor.setDecorations(decoration, ranges);
-			}
+			window.activeTextEditor.setDecorations(decoration, ranges);
+		}
 
+		{
 			const decoration = window.createTextEditorDecorationType({
 				textDecoration: "line-through",
 				opacity: "0.15"
@@ -131,9 +145,15 @@ export function activate(context: ExtensionContext) {
 
 			window.activeTextEditor.setDecorations(decoration, strikeRanges);
 		}
+
+		{
+			const decoration = window.createTextEditorDecorationType({
+				color: "#7AB2F4"
+			});
+
+			decorations.push(decoration);
+
+			window.activeTextEditor.setDecorations(decoration, stringRanges);
+		}
 	}
-
-	colour();
 }
-
-export function deactivate() {}
