@@ -1,4 +1,4 @@
-import { ExtensionContext, workspace, window, Position, Range } from 'vscode';
+import { ExtensionContext, workspace, window, Position, Range, TextDocumentChangeEvent, TextEditor, TextEditorDecorationType } from 'vscode';
 
 const colourMap: Record<string, string> = {
 	0: "CACACA",
@@ -65,50 +65,75 @@ const colourMap: Record<string, string> = {
 	Z: "0C112B"
 } as const;
 
+const decorations: TextEditorDecorationType[] = [];
+
 export function activate(context: ExtensionContext) {
+	console.log("activated");
 	window.onDidChangeActiveTextEditor(colour, null, context.subscriptions);
 	workspace.onDidChangeTextDocument(colour, null, context.subscriptions);
 
 	function colour() {
-		const text = window.activeTextEditor?.document.getText();
+		console.log("colouring");
 
-		if (text) {
-			const regex = /`[a-zA-Z0-9][^`]+`/g;
-			const colourRanges = new Map<string, Range[]>();
+		if (window.activeTextEditor) {
+			for (const decoration of decorations) {
+				decoration.dispose();
+			}
+
+			decorations.splice(0, decorations.length);
+
+			const text = window.activeTextEditor.document.getText();
+			const regex = /`[^\W_][^`]+`/g;
+			const coloursRanges = new Map<string, Range[]>();
 			const strikeRanges: Range[] = [];
 			const lines = text.split("\n");
 
 			let current;
 
 			while (current = regex.exec(text)) {
-				const line = text.slice(0, current.index).split("\n").length - 1;
-				const startPos = new Position(line, current.index - lines.slice(0, line).join("\n").length - Number(!!line));
+				const { 0: string, index } = current;
+				const line = text.slice(0, index).split("\n").length - 1;
+				const startPos = new Position(line, index - lines.slice(0, line).join("\n").length - Number(!!line));
 
-				let ranges = colourRanges.get(current[0][1]);
+				let colourRanges = coloursRanges.get(string[1]);
 
-				if (!ranges) {
-					ranges = [];
-					colourRanges.set(current[0][1], ranges);
+				if (!colourRanges) {
+					colourRanges = [];
+					coloursRanges.set(string[1], colourRanges);
 				}
 
-				ranges.push(new Range(startPos.translate(0, 2), startPos.translate(0, current[0].length - 1)));
+				const innerStartPos = startPos.translate(0, 2);
+				const innerEndPos = startPos.translate(0, string.length - 1);
+				const endPos = startPos.translate(0, string.length);
 
-				strikeRanges.push(new Range(startPos, startPos.translate(0, 2)));
-				strikeRanges.push(new Range(startPos.translate(0, current[0].length - 1), startPos.translate(0, current[0].length)));
+				colourRanges.push(new Range(innerStartPos, innerEndPos));
+
+				strikeRanges.push(new Range(startPos, innerStartPos));
+				strikeRanges.push(new Range(innerEndPos, endPos));
 			}
 
-			for (let [ key, value ] of colourRanges) {
-				window.activeTextEditor?.setDecorations(window.createTextEditorDecorationType({
-					color: `#${colourMap[key]}`
-				}), value);
+			for (let [ colourID, ranges ] of coloursRanges) {
+				const decoration = window.createTextEditorDecorationType({
+					color: `#${colourMap[colourID]}`
+				});
+
+				decorations.push(decoration);
+
+				window.activeTextEditor.setDecorations(decoration, ranges);
 			}
 
-			window.activeTextEditor?.setDecorations(window.createTextEditorDecorationType({
+			const decoration = window.createTextEditorDecorationType({
 				textDecoration: "line-through",
-				opacity: "0.5"
-			}), strikeRanges);
+				opacity: "0.15"
+			});
+
+			decorations.push(decoration);
+
+			window.activeTextEditor.setDecorations(decoration, strikeRanges);
 		}
 	}
+
+	colour();
 }
 
 export function deactivate() {}
