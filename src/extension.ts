@@ -1,4 +1,4 @@
-import { workspace, window, Range, TextEditorDecorationType, commands, Position, TextEditor, DecorationRenderOptions } from 'vscode';
+import { workspace, window, Range, TextEditorDecorationType, commands, Position, DecorationRenderOptions } from 'vscode';
 
 const colourMap: Record<string, string> = {
 	0: "#CACACA",
