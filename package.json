@@ -3,7 +3,7 @@
 	"publisher": "Samual",
 	"displayName": "Hackmud Colour",
 	"description": "Colours text like hackmud",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/samualtnorman/hackmud-color.git"
