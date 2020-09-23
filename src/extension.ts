@@ -63,7 +63,23 @@ const colourMap: Record<string, string> = {
 	X: "FF0070",
 	Y: "FF6A98",
 	Z: "0C112B"
-} as const;
+};
+
+const trustUsers: string[] = [
+	"accts",
+	"autos",
+	"binmat",
+	"chats",
+	"corps",
+	"escrow",
+	"gui",
+	"kernel",
+	"market",
+	"scripts",
+	"sys",
+	"trust",
+	"users"
+];
 
 const decorations: TextEditorDecorationType[] = [];
 
@@ -114,6 +130,42 @@ function decorate() {
 						for (const { index, match } of matches(/\\n|\\t/g, stringMatch)) {
 							const offset = stringIndex + index;
 							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + match.length)));
+						}
+
+						for (const { index, match } of matches(/[a-z]\w*\.\w+/g, stringMatch)) {
+							const offset = stringIndex + index;
+							const [ user, script ] = match.split(".");
+
+							if (trustUsers.includes(user)) {
+								let colourRanges = coloursRanges.get("F");
+
+								if (!colourRanges) {
+									colourRanges = [];
+									coloursRanges.set("F", colourRanges);
+								}
+
+								colourRanges.push(new Range(positionAt(offset), positionAt(offset + user.length)));
+							} else {
+								let colourRanges = coloursRanges.get("C");
+
+								if (!colourRanges) {
+									colourRanges = [];
+									coloursRanges.set("C", colourRanges);
+								}
+
+								colourRanges.push(new Range(positionAt(offset), positionAt(offset + user.length)));
+							}
+
+							{
+								let colourRanges = coloursRanges.get("L");
+
+								if (!colourRanges) {
+									colourRanges = [];
+									coloursRanges.set("L", colourRanges);
+								}
+
+								colourRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
+							}
 						}
 					}
 				}
