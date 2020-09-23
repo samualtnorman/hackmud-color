@@ -1,4 +1,4 @@
-import { workspace, window, Range, TextEditorDecorationType, commands } from 'vscode';
+import { workspace, window, Range, TextEditorDecorationType, commands, Position } from 'vscode';
 
 const colourMap: Record<string, string> = {
 	0: "CACACA",
@@ -68,9 +68,9 @@ const colourMap: Record<string, string> = {
 const decorations: TextEditorDecorationType[] = [];
 
 export function activate() {
-	window.onDidChangeActiveTextEditor(colour);
-	workspace.onDidChangeTextDocument(colour);
-	workspace.onDidChangeConfiguration(colour);
+	window.onDidChangeActiveTextEditor(decorate);
+	workspace.onDidChangeTextDocument(decorate);
+	workspace.onDidChangeConfiguration(decorate);
 
 	commands.registerCommand("hackmud-color.enable", () => {
 		console.log("test");
@@ -83,12 +83,12 @@ export function activate() {
 		// colour();
 	});
 
-	colour();
+	decorate();
 }
 
 export function deactivate() {}
 
-function colour() {
+function decorate() {
 	for (const decoration of decorations.splice(0)) {
 		decoration.dispose();
 	}
@@ -108,22 +108,7 @@ function colour() {
 						stringRanges.push(new Range(positionAt(stringIndex + 1), positionAt(stringIndex + stringMatch.length - 1)));
 
 						for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
-							const offset = stringIndex + index;
-							const startPos = positionAt(offset);
-							const innerStartPos = positionAt(offset + 2);
-							const innerEndPos = positionAt(offset + match.length - 1);
-							const endPos = positionAt(offset + match.length);
-
-							let colourRanges = coloursRanges.get(match[1]);
-
-							if (!colourRanges) {
-								colourRanges = [];
-								coloursRanges.set(match[1], colourRanges);
-							}
-
-							colourRanges.push(new Range(innerStartPos, innerEndPos));
-							strikeRanges.push(new Range(startPos, innerStartPos));
-							strikeRanges.push(new Range(innerEndPos, endPos));
+							colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges);
 						}
 
 						for (const { index, match } of matches(/\\n|\\t/g, stringMatch)) {
@@ -138,21 +123,7 @@ function colour() {
 				stringRanges.push(new Range(positionAt(0), positionAt(text.length)));
 
 				for (const { index, match } of matches(/`[^\W_][^`\n]+`/g, text)) {
-					const startPos = positionAt(index);
-					const innerStartPos = positionAt(index + 2);
-					const innerEndPos = positionAt(index + match.length - 1);
-					const endPos = positionAt(index + match.length);
-
-					let colourRanges = coloursRanges.get(match[1]);
-
-					if (!colourRanges) {
-						colourRanges = [];
-						coloursRanges.set(match[1], colourRanges);
-					}
-
-					colourRanges.push(new Range(innerStartPos, innerEndPos));
-					strikeRanges.push(new Range(startPos, innerStartPos));
-					strikeRanges.push(new Range(innerEndPos, endPos));
+					colour(positionAt, index, match, coloursRanges, strikeRanges);
 				}
 
 				break;
@@ -189,6 +160,24 @@ function colour() {
 			window.activeTextEditor.setDecorations(decoration, stringRanges);
 		}
 	}
+}
+
+function colour(positionAt: (offset: number) => Position, index: number, match: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[]) {
+	const startPos = positionAt(index);
+	const innerStartPos = positionAt(index + 2);
+	const innerEndPos = positionAt(index + match.length - 1);
+	const endPos = positionAt(index + match.length);
+
+	let colourRanges = coloursRanges.get(match[1]);
+
+	if (!colourRanges) {
+		colourRanges = [];
+		coloursRanges.set(match[1], colourRanges);
+	}
+
+	colourRanges.push(new Range(innerStartPos, innerEndPos));
+	strikeRanges.push(new Range(startPos, innerStartPos));
+	strikeRanges.push(new Range(innerEndPos, endPos));
 }
 
 function* matches(regex: RegExp, string: string) {
