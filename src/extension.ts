@@ -91,12 +91,10 @@ export function activate() {
 	commands.registerCommand("hackmud-color.enable", () => {
 		console.log("test");
 		workspace.getConfiguration("hackmud-color").update("enabled", true);
-		// colour();
 	});
 
 	commands.registerCommand("hackmud-color.disable", () => {
 		workspace.getConfiguration("hackmud-color").update("enabled", false);
-		// colour();
 	});
 
 	decorate();
