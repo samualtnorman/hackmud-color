@@ -89,7 +89,6 @@ export function activate() {
 	workspace.onDidChangeConfiguration(decorate);
 
 	commands.registerCommand("hackmud-color.enable", () => {
-		console.log("test");
 		workspace.getConfiguration("hackmud-color").update("enabled", true);
 	});
 
@@ -134,12 +133,21 @@ function decorate() {
 							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + match.length)));
 						}
 
-						for (const { index, match } of matches(/[a-z]\w*\.\w+/g, stringMatch)) {
+						// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
+						for (const { index, match } of matches(/(?<!#.*)[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*/g, stringMatch)) {
 							const offset = stringIndex + index;
 							const [ user ] = match.split(".");
 
 							(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
 							scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
+						}
+
+						for (const { index, match } of matches(/#s\.[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*/g, stringMatch)) {
+							const offset = stringIndex + index + 3;
+							const [ , user ] = match.split(".");
+
+							(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
+							scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length - 3)));
 						}
 					}
 				}
