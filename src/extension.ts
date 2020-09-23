@@ -137,7 +137,7 @@ function colour() {
 			case "plaintext":
 				stringRanges.push(new Range(positionAt(0), positionAt(text.length)));
 
-				for (const { index, match } of matches(/`[^\W_][^`]+`/g, text)) {
+				for (const { index, match } of matches(/`[^\W_][^`\n]+`/g, text)) {
 					const startPos = positionAt(index);
 					const innerStartPos = positionAt(index + 2);
 					const innerEndPos = positionAt(index + match.length - 1);
