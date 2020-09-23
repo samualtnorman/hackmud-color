@@ -1,4 +1,4 @@
-import { ExtensionContext, workspace, window, Position, Range, TextDocumentChangeEvent, TextEditor, TextEditorDecorationType } from 'vscode';
+import { workspace, window, Range, TextEditorDecorationType, commands } from 'vscode';
 
 const colourMap: Record<string, string> = {
 	0: "CACACA",
@@ -70,6 +70,18 @@ const decorations: TextEditorDecorationType[] = [];
 export function activate() {
 	window.onDidChangeActiveTextEditor(colour);
 	workspace.onDidChangeTextDocument(colour);
+	workspace.onDidChangeConfiguration(colour);
+
+	commands.registerCommand("hackmud-color.enable", () => {
+		console.log("test");
+		workspace.getConfiguration("hackmud-color").update("enabled", true);
+		// colour();
+	});
+
+	commands.registerCommand("hackmud-color.disable", () => {
+		workspace.getConfiguration("hackmud-color").update("enabled", false);
+		// colour();
+	});
 
 	colour();
 }
@@ -77,16 +89,16 @@ export function activate() {
 export function deactivate() {}
 
 function colour() {
-	if (window.activeTextEditor) {
+	for (const decoration of decorations.splice(0)) {
+		decoration.dispose();
+	}
+
+	if (workspace.getConfiguration("hackmud-color").get("enabled") && window.activeTextEditor) {
 		const { positionAt, languageId } = window.activeTextEditor.document;
 		const text = window.activeTextEditor.document.getText();
 		const coloursRanges = new Map<string, Range[]>();
 		const stringRanges: Range[] = [];
 		const strikeRanges: Range[] = [];
-
-		for (const decoration of decorations.splice(0)) {
-			decoration.dispose();
-		}
 
 		switch (languageId) {
 			case "javascript":

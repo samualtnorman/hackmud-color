@@ -18,10 +18,23 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "hackmud-color.color",
-				"title": "Hackmud Color"
+				"command": "hackmud-color.enable",
+				"title": "Hackmud Color: Enable"
+			},
+			{
+				"command": "hackmud-color.disable",
+				"title": "Hackmud Color: Disable"
 			}
-		]
+		],
+		"configuration": {
+			"title": "Hackmud Color",
+			"properties": {
+				"hackmud-color.enabled": {
+					"type": "boolean",
+					"default": true
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
