@@ -83,17 +83,24 @@ const trustUsers: string[] = [
 
 const decorations: TextEditorDecorationType[] = [];
 
+let config = workspace.getConfiguration("hackmud-color");
+
 export function activate() {
 	window.onDidChangeActiveTextEditor(decorate);
 	workspace.onDidChangeTextDocument(decorate);
-	workspace.onDidChangeConfiguration(decorate);
+	workspace.onDidChangeConfiguration(() => {
+		config = workspace.getConfiguration("hackmud-color");
+		decorate();
+	});
 
 	commands.registerCommand("hackmud-color.enable", () => {
-		workspace.getConfiguration("hackmud-color").update("enabled", true);
+		// workspace.getConfiguration("hackmud-color").update("enabled", true);
+		config.update("enabled", true);
 	});
 
 	commands.registerCommand("hackmud-color.disable", () => {
-		workspace.getConfiguration("hackmud-color").update("enabled", false);
+		// workspace.getConfiguration("hackmud-color").update("enabled", false);
+		config.update("enabled", false);
 	});
 
 	decorate();
@@ -102,11 +109,12 @@ export function activate() {
 export function deactivate() {}
 
 function decorate() {
+	console.time("decorate");
 	for (const decoration of decorations.splice(0)) {
 		decoration.dispose();
 	}
 
-	if (workspace.getConfiguration("hackmud-color").get("enabled") && window.activeTextEditor) {
+	if (window.activeTextEditor && config.get("enabled")) {
 		const { positionAt, languageId } = window.activeTextEditor.document;
 		const text = window.activeTextEditor.document.getText();
 		const coloursRanges = new Map<string, Range[]>();
@@ -119,42 +127,71 @@ function decorate() {
 				const scriptOrangeRanges: Range[] = [];
 				const scriptGreyRanges: Range[] = [];
 				const scriptGreenRanges: Range[] = [];
+				const keyRanges: Range[] = [];
+				const valueRanges: Range[] = [];
 
-				for (const { index: stringIndex, match: stringMatch } of matches(/""|''|".*?[^\\]"|'.*?[^\\]'/gs, text)) {
-					if (stringMatch.length > 2) {
-						stringRanges.push(new Range(positionAt(stringIndex + 1), positionAt(stringIndex + stringMatch.length - 1)));
+				for (const { index: stringIndex, match: stringMatch } of matches(/"([^\\]|\\.)*?"|'([^\\]|\\.)*?'/gs, text)) {
+					stringRanges.push(new Range(positionAt(stringIndex + 1), positionAt(stringIndex + stringMatch.length - 1)));
 
-						for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
-							colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges);
+					for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
+						colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges);
+					}
+
+					for (const { index, match } of matches(/\\./g, stringMatch)) {
+						const offset = stringIndex + index;
+
+						if (match[1] === "n" || match[1] === "t") {
+							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
+						} else {
+							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)));
+						}
+					}
+
+					// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
+					for (let { index, match } of matches(/(?<!#[^s]?.*)(?:#s\.)?([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)/g, stringMatch)) {
+						if (match[0] === "#") {
+							index += 3;
+							match = match.slice(3);
 						}
 
-						for (const { index, match } of matches(/\\n|\\t/g, stringMatch)) {
-							const offset = stringIndex + index;
-							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + match.length)));
+						let offset = stringIndex + index;
+
+						const [ user ] = match.split(".");
+
+						(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
+						scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
+					}
+
+					for (let { index, match } of matches(/([a-zA-Z_]\w*|\"[^\"]+?\") ?: ?(\".*?\"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
+						let offset = stringIndex + index;
+						let colon;
+
+						if (match[0] === '"') {
+							const keyEnd = match.indexOf('"', 1);
+
+							colon = match.indexOf(":", keyEnd);
+
+							if (/^[a-zA-Z_]\w*$/.exec(match.slice(1, keyEnd))) {
+								keyRanges.push(new Range(positionAt(offset + 1), positionAt(offset + keyEnd)));
+								strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)));
+								strikeRanges.push(new Range(positionAt(offset + keyEnd), positionAt(offset + keyEnd + 1)));
+							} else {
+								keyRanges.push(new Range(positionAt(offset), positionAt(offset + keyEnd + 1)));
+							}
+						} else {
+							colon = match.indexOf(":");
+							keyRanges.push(new Range(positionAt(offset), positionAt(offset + match.search(/ |:/))));
 						}
 
-						// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
-						for (const { index, match } of matches(/(?<!#.*)[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*/g, stringMatch)) {
-							const offset = stringIndex + index;
-							const [ user ] = match.split(".");
-
-							(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
-							scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
-						}
-
-						for (const { index, match } of matches(/#s\.[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*/g, stringMatch)) {
-							const offset = stringIndex + index + 3;
-							const [ , user ] = match.split(".");
-
-							(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
-							scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length - 3)));
-						}
+						valueRanges.push(new Range(positionAt(offset + colon + 1 + match.slice(colon + 1).search(/[^ ]/)), positionAt(offset + match.length)));
 					}
 				}
 
 				addDecoration({ color: colourMap.F }, scriptOrangeRanges);
 				addDecoration({ color: colourMap.C }, scriptGreyRanges);
 				addDecoration({ color: colourMap.L }, scriptGreenRanges);
+				addDecoration({ color: colourMap.N }, keyRanges);
+				addDecoration({ color: colourMap.V }, valueRanges);
 
 				break;
 			} case "plaintext": {
@@ -183,6 +220,7 @@ function decorate() {
 		addDecoration({ textDecoration: "line-through", opacity: "0.3" }, strikeRanges);
 		addDecoration({ color: colourMap.S }, stringRanges);
 	}
+	console.timeEnd("decorate");
 }
 
 function colour(positionAt: (offset: number) => Position, index: number, match: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[]) {
