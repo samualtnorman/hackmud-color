@@ -154,7 +154,7 @@ function decorate() {
 							match = match.slice(3);
 						}
 
-						let offset = stringIndex + index;
+						const offset = stringIndex + index;
 
 						const [ user ] = match.split(".");
 
@@ -162,8 +162,9 @@ function decorate() {
 						scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
 					}
 
-					for (let { index, match } of matches(/([a-zA-Z_]\w*|\"[^\"]+?\") ?: ?(\".*?\"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
-						let offset = stringIndex + index;
+					for (const { index, match } of matches(/([a-zA-Z_]\w*|"[^"]+?") ?: ?(\\?".*?"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
+						const offset = stringIndex + index;
+
 						let colon;
 
 						if (match[0] === '"') {
@@ -171,7 +172,7 @@ function decorate() {
 
 							colon = match.indexOf(":", keyEnd);
 
-							if (/^[a-zA-Z_]\w*$/.exec(match.slice(1, keyEnd))) {
+							if (/^[a-zA-Z_]\w*\\?$/.exec(match.slice(1, keyEnd))) {
 								keyRanges.push(new Range(positionAt(offset + 1), positionAt(offset + keyEnd)));
 								strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)));
 								strikeRanges.push(new Range(positionAt(offset + keyEnd), positionAt(offset + keyEnd + 1)));
@@ -184,6 +185,12 @@ function decorate() {
 						}
 
 						valueRanges.push(new Range(positionAt(offset + colon + 1 + match.slice(colon + 1).search(/[^ ]/)), positionAt(offset + match.length)));
+					}
+
+					for (const { index } of matches(/\\\\"/gs, stringMatch)) {
+						const offset = stringIndex + index;
+
+						strikeRanges.push(new Range(positionAt(offset + 1), positionAt(offset + 2)));
 					}
 				}
 
