@@ -164,6 +164,7 @@ function decorate() {
 
 					for (const { index, match } of matches(/([a-zA-Z_]\w*|"[^"]+?") ?: ?(\\?".*?"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
 						const offset = stringIndex + index;
+						const startPos = positionAt(offset);
 
 						let colon;
 
@@ -173,15 +174,18 @@ function decorate() {
 							colon = match.indexOf(":", keyEnd);
 
 							if (/^[a-zA-Z_]\w*\\?$/.exec(match.slice(1, keyEnd))) {
-								keyRanges.push(new Range(positionAt(offset + 1), positionAt(offset + keyEnd)));
-								strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)));
-								strikeRanges.push(new Range(positionAt(offset + keyEnd), positionAt(offset + keyEnd + 1)));
+								const keyStartPos = positionAt(offset + 1);
+								const keyEndPos = positionAt(offset + keyEnd);
+
+								keyRanges.push(new Range(keyStartPos, keyEndPos));
+								strikeRanges.push(new Range(startPos, keyStartPos));
+								strikeRanges.push(new Range(keyEndPos, positionAt(offset + keyEnd + 1)));
 							} else {
-								keyRanges.push(new Range(positionAt(offset), positionAt(offset + keyEnd + 1)));
+								keyRanges.push(new Range(startPos, positionAt(offset + keyEnd + 1)));
 							}
 						} else {
 							colon = match.indexOf(":");
-							keyRanges.push(new Range(positionAt(offset), positionAt(offset + match.search(/ |:/))));
+							keyRanges.push(new Range(startPos, positionAt(offset + match.search(/ |:/))));
 						}
 
 						valueRanges.push(new Range(positionAt(offset + colon + 1 + match.slice(colon + 1).search(/[^ ]/)), positionAt(offset + match.length)));
