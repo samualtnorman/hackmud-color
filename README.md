@@ -20,4 +20,4 @@ Adds 2 commands `Hackmud Color: Enable` and `Hackmud Color: Disable` which enabl
 Adds `hackmud-color.enable` which enables or disables the extension.
 
 ## Known Issues
-Commented code is coloured. Not a breaking bug, just an oversight that makes some test look weird.
+There are no known issues which means this extension is perfect (or issues havn't been discovered yet - post an issue if you spot something).
