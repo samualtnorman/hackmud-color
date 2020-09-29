@@ -16,7 +16,6 @@ After:
 Adds 2 commands `Hackmud Color: Enable` and `Hackmud Color: Disable` which enable and disable the extension on the fly.
 
 ## Extension Settings
-
 Adds `hackmud-color.enable` which enables or disables the extension.
 
 ## Known Issues
