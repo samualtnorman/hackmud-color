@@ -130,9 +130,12 @@ function decorate() {
 				const keyRanges: Range[] = [];
 				const valueRanges: Range[] = [];
 
-				for (const { index: stringIndex, match: stringMatch } of matches(/\/\/.*$|"([^\\]|\\.)*?"|'([^\\]|\\.)*?'|\/([^\\]|\\.)*?\//gm, text)) {
+				for (let { index: stringIndex, match: stringMatch } of matches(/\/\/.*$|"([^\\]|\\.)*?"|'([^\\]|\\.)*?'|\/([^\\]|\\.)*?\/|`([^\\]|\\.)*?`/gm, text)) {
 					if (stringMatch[0] !== "/") {
-						stringRanges.push(new Range(positionAt(stringIndex + 1), positionAt(stringIndex + stringMatch.length - 1)));
+						stringIndex++;
+						stringMatch = stringMatch.slice(1, -1);
+
+						stringRanges.push(new Range(positionAt(stringIndex), positionAt(stringIndex + stringMatch.length)));
 
 						for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
 							colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges);
@@ -174,7 +177,7 @@ function decorate() {
 
 								colon = match.indexOf(":", keyEnd);
 
-								if (/^[a-zA-Z_]\w*\\?$/.exec(match.slice(1, keyEnd))) {
+								if (/^\\?[a-zA-Z_](\\?\w)*\\?$/.exec(match.slice(1, keyEnd))) {
 									const keyStartPos = positionAt(offset + 1);
 									const keyEndPos = positionAt(offset + keyEnd);
 
