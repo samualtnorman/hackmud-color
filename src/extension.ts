@@ -240,21 +240,23 @@ function decorate() {
 }
 
 function colour(positionAt: (offset: number) => Position, index: number, match: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[]) {
-	const startPos = positionAt(index);
-	const innerStartPos = positionAt(index + 2);
-	const innerEndPos = positionAt(index + match.length - 1);
-	const endPos = positionAt(index + match.length);
+	if (!/`[^\W_](:.|.:|:)`/.exec(match)) {
+		const startPos = positionAt(index);
+		const innerStartPos = positionAt(index + 2);
+		const innerEndPos = positionAt(index + match.length - 1);
+		const endPos = positionAt(index + match.length);
 
-	let colourRanges = coloursRanges.get(match[1]);
+		let colourRanges = coloursRanges.get(match[1]);
 
-	if (!colourRanges) {
-		colourRanges = [];
-		coloursRanges.set(match[1], colourRanges);
+		if (!colourRanges) {
+			colourRanges = [];
+			coloursRanges.set(match[1], colourRanges);
+		}
+
+		colourRanges.push(new Range(innerStartPos, innerEndPos));
+		strikeRanges.push(new Range(startPos, innerStartPos));
+		strikeRanges.push(new Range(innerEndPos, endPos));
 	}
-
-	colourRanges.push(new Range(innerStartPos, innerEndPos));
-	strikeRanges.push(new Range(startPos, innerStartPos));
-	strikeRanges.push(new Range(innerEndPos, endPos));
 }
 
 function addDecoration(decorationRenderOptions: DecorationRenderOptions, ranges: Range[]) {
