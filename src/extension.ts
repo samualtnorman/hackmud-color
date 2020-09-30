@@ -94,12 +94,10 @@ export function activate() {
 	});
 
 	commands.registerCommand("hackmud-color.enable", () => {
-		// workspace.getConfiguration("hackmud-color").update("enabled", true);
 		config.update("enabled", true);
 	});
 
 	commands.registerCommand("hackmud-color.disable", () => {
-		// workspace.getConfiguration("hackmud-color").update("enabled", false);
 		config.update("enabled", false);
 	});
 
@@ -109,7 +107,6 @@ export function activate() {
 export function deactivate() {}
 
 function decorate() {
-	console.time("decorate");
 	for (const decoration of decorations.splice(0)) {
 		decoration.dispose();
 	}
@@ -130,7 +127,7 @@ function decorate() {
 				const keyRanges: Range[] = [];
 				const valueRanges: Range[] = [];
 
-				for (let { index: stringIndex, match: stringMatch } of matches(/\/\/.*$|"([^\\]|\\.)*?"|'([^\\]|\\.)*?'|\/([^\\]|\\.)*?\/|`([^\\]|\\.)*?`/gm, text)) {
+				for (let { index: stringIndex, match: stringMatch } of matches(/\/\/.*$|"([^\\\n]|\\.|\\\n)*?"|'([^\\\n]|\\.|\\\n)*?'|\/([^\\]|\\.)*?\/|`([^\\\n]|\\.|\\\n)*?`/gm, text)) {
 					if (stringMatch[0] !== "/") {
 						stringIndex++;
 						stringMatch = stringMatch.slice(1, -1);
@@ -177,7 +174,7 @@ function decorate() {
 
 								colon = match.indexOf(":", keyEnd);
 
-								if (/^\\?[a-zA-Z_](\\?\w)*\\?$/.exec(match.slice(1, keyEnd))) {
+								if (/^[a-zA-Z_]\w*\\?$/.exec(match.slice(1, keyEnd))) {
 									const keyStartPos = positionAt(offset + 1);
 									const keyEndPos = positionAt(offset + keyEnd);
 
@@ -198,7 +195,7 @@ function decorate() {
 						for (const { index } of matches(/\\\\"/gs, stringMatch)) {
 							const offset = stringIndex + index;
 
-							strikeRanges.push(new Range(positionAt(offset + 1), positionAt(offset + 2)));
+							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
 						}
 					}
 				}
@@ -236,7 +233,6 @@ function decorate() {
 		addDecoration({ textDecoration: "line-through", opacity: "0.3" }, strikeRanges);
 		addDecoration({ color: colourMap.S }, stringRanges);
 	}
-	console.timeEnd("decorate");
 }
 
 function colour(positionAt: (offset: number) => Position, index: number, match: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[]) {
