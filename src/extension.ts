@@ -127,78 +127,7 @@ function decorate() {
 				const keyRanges: Range[] = [];
 				const valueRanges: Range[] = [];
 
-				for (let { index: stringIndex, match: stringMatch } of matches(/\/\/.*$|"([^\\\n]|\\.|\\\n)*?"|'([^\\\n]|\\.|\\\n)*?'|\/([^\\]|\\.)*?\/|`([^\\\n]|\\.|\\\n)*?`/gm, text)) {
-					if (stringMatch[0] !== "/") {
-						stringIndex++;
-						stringMatch = stringMatch.slice(1, -1);
-
-						stringRanges.push(new Range(positionAt(stringIndex), positionAt(stringIndex + stringMatch.length)));
-
-						for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
-							colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges);
-						}
-
-						for (const { index, match } of matches(/\\./g, stringMatch)) {
-							const offset = stringIndex + index;
-
-							if (match[1] === "n" || match[1] === "t") {
-								strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
-							} else {
-								strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)));
-							}
-						}
-
-						// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
-						for (let { index, match } of matches(/(?<!#[^s]?.*)(?:#s\.)?([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)/g, stringMatch)) {
-							if (match[0] === "#") {
-								index += 3;
-								match = match.slice(3);
-							}
-
-							const offset = stringIndex + index;
-
-							const [ user ] = match.split(".");
-
-							(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
-							scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
-						}
-
-						for (const { index, match } of matches(/([a-zA-Z_]\w*|"[^"]+?") ?: ?(\\?".*?"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
-							const offset = stringIndex + index;
-							const startPos = positionAt(offset);
-
-							let colon;
-
-							if (match[0] === '"') {
-								const keyEnd = match.indexOf('"', 1);
-
-								colon = match.indexOf(":", keyEnd);
-
-								if (/^[a-zA-Z_]\w*\\?$/.exec(match.slice(1, keyEnd))) {
-									const keyStartPos = positionAt(offset + 1);
-									const keyEndPos = positionAt(offset + keyEnd);
-
-									keyRanges.push(new Range(keyStartPos, keyEndPos));
-									strikeRanges.push(new Range(startPos, keyStartPos));
-									strikeRanges.push(new Range(keyEndPos, positionAt(offset + keyEnd + 1)));
-								} else {
-									keyRanges.push(new Range(startPos, positionAt(offset + keyEnd + 1)));
-								}
-							} else {
-								colon = match.indexOf(":");
-								keyRanges.push(new Range(startPos, positionAt(offset + match.search(/ |:/))));
-							}
-
-							valueRanges.push(new Range(positionAt(offset + colon + 1 + match.slice(colon + 1).search(/[^ ]/)), positionAt(offset + match.length)));
-						}
-
-						for (const { index } of matches(/\\\\"/gs, stringMatch)) {
-							const offset = stringIndex + index;
-
-							strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
-						}
-					}
-				}
+				findAndProcess(text, stringRanges, positionAt, coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges);
 
 				addDecoration({ color: colourMap.F }, scriptOrangeRanges);
 				addDecoration({ color: colourMap.C }, scriptGreyRanges);
@@ -232,6 +161,94 @@ function decorate() {
 
 		addDecoration({ textDecoration: "line-through", opacity: "0.3" }, strikeRanges);
 		addDecoration({ color: colourMap.S }, stringRanges);
+	}
+}
+
+function findAndProcess(text: string, stringRanges: Range[], positionAt: (offset: number) => Position, coloursRanges: Map<string, Range[]>, strikeRanges: Range[], scriptOrangeRanges: Range[], scriptGreyRanges: Range[], scriptGreenRanges: Range[], keyRanges: Range[], valueRanges: Range[]) {
+	for (let { index: stringIndex, match: stringMatch } of matches(/\/\/.*$|"([^\\\n]|\\.|\\\n)*?"|'([^\\\n]|\\.|\\\n)*?'|\/([^\\]|\\.)*?\//gm, text)) {
+		switch (stringMatch[0]) {
+			case '"':
+			case "'": {
+				processString(stringRanges, positionAt, stringIndex + 1, stringMatch.slice(1, -1), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges);
+
+				break;
+			}
+			// case "`": {
+				// |`([^\\]|\\.)*?`
+				//* maybe another time
+				//* need to ignore odd number of backslashes before placeholder
+				//* recursively process placeholders
+			// 	break;
+			// }
+		}
+	}
+}
+
+function processString(stringRanges: Range[], positionAt: (offset: number) => Position, stringIndex: number, stringMatch: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[], scriptOrangeRanges: Range[], scriptGreyRanges: Range[], scriptGreenRanges: Range[], keyRanges: Range[], valueRanges: Range[]) {
+	stringRanges.push(new Range(positionAt(stringIndex), positionAt(stringIndex + stringMatch.length)));
+
+	for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
+		colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges);
+	}
+
+	for (const { index, match } of matches(/\\./g, stringMatch)) {
+		const offset = stringIndex + index;
+
+		if (match[1] === "n" || match[1] === "t") {
+			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
+		} else {
+			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)));
+		}
+	}
+
+	// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
+	for (let { index, match } of matches(/(?<!#[^s]?.*)(?:#s\.)?([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)/g, stringMatch)) {
+		if (match[0] === "#") {
+			index += 3;
+			match = match.slice(3);
+		}
+
+		const offset = stringIndex + index;
+
+		const [user] = match.split(".");
+
+		(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
+		scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
+	}
+
+	for (const { index, match } of matches(/([a-zA-Z_]\w*|"[^"]+?") ?: ?(\\?".*?"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
+		const offset = stringIndex + index;
+		const startPos = positionAt(offset);
+
+		let colon;
+
+		if (match[0] === '"') {
+			const keyEnd = match.indexOf('"', 1);
+
+			colon = match.indexOf(":", keyEnd);
+
+			if (/^[a-zA-Z_]\w*\\?$/.exec(match.slice(1, keyEnd))) {
+				const keyStartPos = positionAt(offset + 1);
+				const keyEndPos = positionAt(offset + keyEnd);
+
+				keyRanges.push(new Range(keyStartPos, keyEndPos));
+				strikeRanges.push(new Range(startPos, keyStartPos));
+				strikeRanges.push(new Range(keyEndPos, positionAt(offset + keyEnd + 1)));
+			} else {
+				keyRanges.push(new Range(startPos, positionAt(offset + keyEnd + 1)));
+			}
+		} else {
+			colon = match.indexOf(":");
+			keyRanges.push(new Range(startPos, positionAt(offset + match.search(/ |:/))));
+		}
+
+		valueRanges.push(new Range(positionAt(offset + colon + 1 + match.slice(colon + 1).search(/[^ ]/)), positionAt(offset + match.length)));
+	}
+
+	for (const { index } of matches(/\\\\"/gs, stringMatch)) {
+		const offset = stringIndex + index;
+
+		strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
 	}
 }
 
