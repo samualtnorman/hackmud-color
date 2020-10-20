@@ -1,4 +1,6 @@
 # hackmud-color README
+![Build Test](https://github.com/samualtnorman/hackmud-color/workflows/Build%20Test/badge.svg)
+
 Colours strings as they appear in game, and colours plaintext as it appears on the forums.
 
 Before:
