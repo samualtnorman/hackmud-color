@@ -60,7 +60,7 @@
 		"@typescript-eslint/parser": "^4.6.0",
 		"glob": "^7.1.6",
 		"mocha": "^8.2.0",
-		"typescript": "^4.0.2",
+		"typescript": "^4.0.5",
 		"vscode-test": "^1.4.0"
 	}
 }
