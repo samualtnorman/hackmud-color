@@ -145,7 +145,7 @@ function decorate() {
 					colour(positionAt, index, match, coloursRanges, strikeRanges);
 				}
 
-				for (const { index, match } of matches(/https:\/\/(www.)?hackmud.com\/\S*/g, text)) {
+				for (const { index, match } of matches(/https:\/\/(www\.)?hackmud.com\/\S*/g, text)) {
 					linkRanges.push(new Range(positionAt(index), positionAt(index + match.length)));
 				}
 
