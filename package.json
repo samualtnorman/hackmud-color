@@ -3,7 +3,7 @@
 	"publisher": "Samual",
 	"displayName": "Hackmud Color",
 	"description": "Colours text like hackmud",
-	"version": "0.3.2",
+	"version": "0.3.3",
 	"icon": "images/icon.png",
 	"repository": {
 		"type": "git",
