@@ -88,17 +88,18 @@ let config = workspace.getConfiguration("hackmud-color");
 export function activate() {
 	window.onDidChangeActiveTextEditor(decorate);
 	workspace.onDidChangeTextDocument(decorate);
+
 	workspace.onDidChangeConfiguration(() => {
 		config = workspace.getConfiguration("hackmud-color");
 		decorate();
 	});
 
-	commands.registerCommand("hackmud-color.enable", () => {
-		config.update("enabled", true);
+	commands.registerCommand("hackmud-color.toggle", () => {
+		config.update("enabled", !config.get("enabled", true));
 	});
 
-	commands.registerCommand("hackmud-color.disable", () => {
-		config.update("enabled", false);
+	commands.registerCommand("hackmud-color.global-toggle", () => {
+		config.update("enabled", !config.get("enabled", true), true);
 	});
 
 	decorate();
