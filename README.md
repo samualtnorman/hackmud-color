@@ -1,5 +1,5 @@
 # Hackmud Color
-Colours strings as they appear in game, and colours plaintext as it appears on the forums.
+Colour strings as they appear in the game, and colours plaintext as it appears on the forums. 
 
 Before:
 ![before](images/before.png)
