@@ -175,6 +175,10 @@ function findAndProcess(text: string, stringRanges: Range[], positionAt: (offset
 }
 
 function processString(stringRanges: Range[], positionAt: (offset: number) => Position, stringIndex: number, stringMatch: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[], scriptOrangeRanges: Range[], scriptGreyRanges: Range[], scriptGreenRanges: Range[], keyRanges: Range[], valueRanges: Range[]) {
+	// TODO custom nested colour mode (I'll basically just pull in my string processor but replace setColour function) (backburner)
+	// TODO colour sectors
+	// BUG inaccuracies with key value pair colouring
+
 	stringRanges.push(new Range(positionAt(stringIndex), positionAt(stringIndex + stringMatch.length)))
 
 	for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch))
@@ -187,7 +191,6 @@ function processString(stringRanges: Range[], positionAt: (offset: number) => Po
 			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)))
 		 else
 			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)))
-
 	}
 
 	// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
@@ -225,7 +228,6 @@ function processString(stringRanges: Range[], positionAt: (offset: number) => Po
 				strikeRanges.push(new Range(keyEndPos, positionAt(offset + keyEnd + 1)))
 			} else
 				keyRanges.push(new Range(startPos, positionAt(offset + keyEnd + 1)))
-
 		} else {
 			colon = match.indexOf(":")
 			keyRanges.push(new Range(startPos, positionAt(offset + match.search(/ |:/))))
