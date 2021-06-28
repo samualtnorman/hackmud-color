@@ -1,4 +1,5 @@
 import { workspace, window, Range, TextEditorDecorationType, commands, Position, DecorationRenderOptions } from "vscode"
+import { createSourceFile, ScriptTarget, SyntaxKind, Node } from "typescript"
 
 // FIXME 5 - 9 appear as default S on forums but here it's always orange
 const colourMap: Record<string, string> = {
@@ -161,21 +162,15 @@ function decorate() {
 }
 
 function findAndProcess(text: string, stringRanges: Range[], positionAt: (offset: number) => Position, coloursRanges: Map<string, Range[]>, strikeRanges: Range[], scriptOrangeRanges: Range[], scriptGreyRanges: Range[], scriptGreenRanges: Range[], keyRanges: Range[], valueRanges: Range[]) {
-	for (let { index: stringIndex, match: stringMatch } of matches(/\/\/.*$|"([^\\\n]|\\.|\\\n)*?"|'([^\\\n]|\\.|\\\n)*?'|\/([^\\]|\\.)*?\//gm, text)) {
-		switch (stringMatch[0]) {
-			case '"':
-			case "'": {
-				processString(stringRanges, positionAt, stringIndex + 1, stringMatch.slice(1, -1), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges)
-			} break
+	createSourceFile("index.ts", text, ScriptTarget.ESNext, true).forEachChild(traverse)
 
-			// case "`": {
-				// |`([^\\]|\\.)*?`
-				//* maybe another time
-				//* need to ignore odd number of backslashes before placeholder
-				//* recursively process placeholders
-			// 	break;
-			// }
-		}
+	function traverse(node: Node) {
+		if (node.kind == SyntaxKind.TemplateHead || node.kind == SyntaxKind.TemplateMiddle)
+			processString(stringRanges, positionAt, node.getStart() + 1, node.getText().slice(1, -2), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges)
+		else if (node.kind == SyntaxKind.StringLiteral || node.kind == SyntaxKind.TemplateTail)
+			processString(stringRanges, positionAt, node.getStart() + 1, node.getText().slice(1, -1), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges)
+		else
+			node.forEachChild(traverse)
 	}
 }
 
