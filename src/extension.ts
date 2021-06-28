@@ -1,5 +1,6 @@
-import { workspace, window, Range, TextEditorDecorationType, commands, Position, DecorationRenderOptions } from "vscode";
+import { workspace, window, Range, TextEditorDecorationType, commands, Position, DecorationRenderOptions } from "vscode"
 
+// FIXME 5 - 9 appear as default S on forums but here it's always orange
 const colourMap: Record<string, string> = {
 	0: "#CACACA",
 	1: "#FFFFFF",
@@ -63,7 +64,7 @@ const colourMap: Record<string, string> = {
 	X: "#FF0070",
 	Y: "#FF6A98",
 	Z: "#0C112B"
-};
+}
 
 const trustUsers: string[] = [
 	"accts",
@@ -79,89 +80,83 @@ const trustUsers: string[] = [
 	"sys",
 	"trust",
 	"users"
-];
+]
 
-const decorations: TextEditorDecorationType[] = [];
+const decorations: TextEditorDecorationType[] = []
 
-let config = workspace.getConfiguration("hackmud-color");
+let config = workspace.getConfiguration("hackmud-color")
 
 export function activate() {
-	window.onDidChangeActiveTextEditor(decorate);
-	workspace.onDidChangeTextDocument(decorate);
+	window.onDidChangeActiveTextEditor(decorate)
+	workspace.onDidChangeTextDocument(decorate)
 
 	workspace.onDidChangeConfiguration(() => {
-		config = workspace.getConfiguration("hackmud-color");
-		decorate();
-	});
+		config = workspace.getConfiguration("hackmud-color")
+		decorate()
+	})
 
-	commands.registerCommand("hackmud-color.toggle", () => {
-		config.update("enabled", !config.get("enabled", true));
-	});
+	commands.registerCommand("hackmud-color.toggle", () =>
+		config.update("enabled", !config.get("enabled", true))
+	)
 
-	commands.registerCommand("hackmud-color.global-toggle", () => {
-		config.update("enabled", !config.get("enabled", true), true);
-	});
+	commands.registerCommand("hackmud-color.global-toggle", () =>
+		config.update("enabled", !config.get("enabled", true), true)
+	)
 
-	decorate();
+	decorate()
 }
 
 export function deactivate() {}
 
 function decorate() {
-	for (const decoration of decorations.splice(0)) {
-		decoration.dispose();
-	}
+	for (const decoration of decorations.splice(0))
+		decoration.dispose()
 
 	if (window.activeTextEditor && config.get("enabled")) {
-		const { positionAt, languageId } = window.activeTextEditor.document;
-		const text = window.activeTextEditor.document.getText();
-		const coloursRanges = new Map<string, Range[]>();
-		const stringRanges: Range[] = [];
-		const strikeRanges: Range[] = [];
+		const { positionAt, languageId } = window.activeTextEditor.document
+		const text = window.activeTextEditor.document.getText()
+		const coloursRanges = new Map<string, Range[]>()
+		const stringRanges: Range[] = []
+		const strikeRanges: Range[] = []
 
 		switch (languageId) {
 			case "javascript":
 			case "typescript": {
-				const scriptOrangeRanges: Range[] = [];
-				const scriptGreyRanges: Range[] = [];
-				const scriptGreenRanges: Range[] = [];
-				const keyRanges: Range[] = [];
-				const valueRanges: Range[] = [];
+				const scriptOrangeRanges: Range[] = []
+				const scriptGreyRanges: Range[] = []
+				const scriptGreenRanges: Range[] = []
+				const keyRanges: Range[] = []
+				const valueRanges: Range[] = []
 
-				findAndProcess(text, stringRanges, positionAt, coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges);
+				findAndProcess(text, stringRanges, positionAt, coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges)
 
-				addDecoration({ color: colourMap.F }, scriptOrangeRanges);
-				addDecoration({ color: colourMap.C }, scriptGreyRanges);
-				addDecoration({ color: colourMap.L }, scriptGreenRanges);
-				addDecoration({ color: colourMap.N }, keyRanges);
-				addDecoration({ color: colourMap.V }, valueRanges);
+				addDecoration({ color: colourMap.F }, scriptOrangeRanges)
+				addDecoration({ color: colourMap.C }, scriptGreyRanges)
+				addDecoration({ color: colourMap.L }, scriptGreenRanges)
+				addDecoration({ color: colourMap.N }, keyRanges)
+				addDecoration({ color: colourMap.V }, valueRanges)
+			} break
 
-				break;
-			} case "plaintext": {
-				const linkRanges: Range[] = [];
+			case "plaintext": {
+				const linkRanges: Range[] = []
 
-				stringRanges.push(new Range(positionAt(0), positionAt(text.length)));
+				stringRanges.push(new Range(positionAt(0), positionAt(text.length)))
 
-				for (const { index, match } of matches(/`[^\W_][^`\n]+`/g, text)) {
-					colour(positionAt, index, match, coloursRanges, strikeRanges);
-				}
+				for (const { index, match } of matches(/`[^\W_][^`\n]+`/g, text))
+					colour(positionAt, index, match, coloursRanges, strikeRanges)
 
-				for (const { index, match } of matches(/https:\/\/(www\.)?hackmud.com\/\S*/g, text)) {
-					linkRanges.push(new Range(positionAt(index), positionAt(index + match.length)));
-				}
+				for (const { index, match } of matches(/https:\/\/(www\.)?hackmud.com\/\S*/g, text))
+					linkRanges.push(new Range(positionAt(index), positionAt(index + match.length)))
 
-				addDecoration({ color: colourMap.P }, linkRanges);
-
-				break;
-			}
+				addDecoration({ color: colourMap.P }, linkRanges)
+			} break
 		}
 
-		for (const [ colourID, ranges ] of coloursRanges) {
-			addDecoration({ color: colourMap[colourID] }, ranges);
-		}
+		for (const [ colourID, ranges ] of coloursRanges)
+			addDecoration({ color: colourMap[colourID] }, ranges)
 
-		addDecoration({ textDecoration: "line-through", opacity: "0.3" }, strikeRanges);
-		addDecoration({ color: colourMap.S }, stringRanges);
+		addDecoration({ textDecoration: "line-through", opacity: "0.3" }, strikeRanges)
+		addDecoration({ color: colourMap.S }, stringRanges)
 	}
 }
 
@@ -170,10 +165,9 @@ function findAndProcess(text: string, stringRanges: Range[], positionAt: (offset
 		switch (stringMatch[0]) {
 			case '"':
 			case "'": {
-				processString(stringRanges, positionAt, stringIndex + 1, stringMatch.slice(1, -1), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges);
+				processString(stringRanges, positionAt, stringIndex + 1, stringMatch.slice(1, -1), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges)
+			} break
 
-				break;
-			}
 			// case "`": {
 				// |`([^\\]|\\.)*?`
 				//* maybe another time
@@ -186,104 +180,102 @@ function findAndProcess(text: string, stringRanges: Range[], positionAt: (offset
 }
 
 function processString(stringRanges: Range[], positionAt: (offset: number) => Position, stringIndex: number, stringMatch: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[], scriptOrangeRanges: Range[], scriptGreyRanges: Range[], scriptGreenRanges: Range[], keyRanges: Range[], valueRanges: Range[]) {
-	stringRanges.push(new Range(positionAt(stringIndex), positionAt(stringIndex + stringMatch.length)));
+	stringRanges.push(new Range(positionAt(stringIndex), positionAt(stringIndex + stringMatch.length)))
 
-	for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch)) {
-		colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges);
-	}
+	for (const { index, match } of matches(/`[^\W_]((?!`|\\n).)+`/g, stringMatch))
+		colour(positionAt, stringIndex + index, match, coloursRanges, strikeRanges)
 
 	for (const { index, match } of matches(/\\./g, stringMatch)) {
-		const offset = stringIndex + index;
+		const offset = stringIndex + index
 
-		if (match[1] === "n" || match[1] === "t") {
-			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
-		} else {
-			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)));
-		}
+		if (match[1] === "n" || match[1] === "t")
+			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)))
+		 else
+			strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 1)))
+
 	}
 
 	// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
 	for (let { index, match } of matches(/(?<!#[^s]?.*)(?:#s\.)?([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)/g, stringMatch)) {
 		if (match[0] === "#") {
-			index += 3;
-			match = match.slice(3);
+			index += 3
+			match = match.slice(3)
 		}
 
-		const offset = stringIndex + index;
+		const offset = stringIndex + index
 
 		const [user] = match.split(".");
 
-		(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)));
-		scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)));
+		(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)))
+		scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)))
 	}
 
 	for (const { index, match } of matches(/([a-zA-Z_]\w*|"[^"]+?") ?: ?(\\?".*?"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
-		const offset = stringIndex + index;
-		const startPos = positionAt(offset);
+		const offset = stringIndex + index
+		const startPos = positionAt(offset)
 
-		let colon;
+		let colon
 
 		if (match[0] === '"') {
-			const keyEnd = match.indexOf('"', 1);
+			const keyEnd = match.indexOf('"', 1)
 
-			colon = match.indexOf(":", keyEnd);
+			colon = match.indexOf(":", keyEnd)
 
 			if (/^[a-zA-Z_]\w*\\?$/.exec(match.slice(1, keyEnd))) {
-				const keyStartPos = positionAt(offset + 1);
-				const keyEndPos = positionAt(offset + keyEnd);
+				const keyStartPos = positionAt(offset + 1)
+				const keyEndPos = positionAt(offset + keyEnd)
 
-				keyRanges.push(new Range(keyStartPos, keyEndPos));
-				strikeRanges.push(new Range(startPos, keyStartPos));
-				strikeRanges.push(new Range(keyEndPos, positionAt(offset + keyEnd + 1)));
-			} else {
-				keyRanges.push(new Range(startPos, positionAt(offset + keyEnd + 1)));
-			}
+				keyRanges.push(new Range(keyStartPos, keyEndPos))
+				strikeRanges.push(new Range(startPos, keyStartPos))
+				strikeRanges.push(new Range(keyEndPos, positionAt(offset + keyEnd + 1)))
+			} else
+				keyRanges.push(new Range(startPos, positionAt(offset + keyEnd + 1)))
+
 		} else {
-			colon = match.indexOf(":");
-			keyRanges.push(new Range(startPos, positionAt(offset + match.search(/ |:/))));
+			colon = match.indexOf(":")
+			keyRanges.push(new Range(startPos, positionAt(offset + match.search(/ |:/))))
 		}
 
-		valueRanges.push(new Range(positionAt(offset + colon + 1 + match.slice(colon + 1).search(/[^ ]/)), positionAt(offset + match.length)));
+		valueRanges.push(new Range(positionAt(offset + colon + 1 + match.slice(colon + 1).search(/[^ ]/)), positionAt(offset + match.length)))
 	}
 
 	for (const { index } of matches(/\\\\"/gs, stringMatch)) {
-		const offset = stringIndex + index;
+		const offset = stringIndex + index
 
-		strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)));
+		strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)))
 	}
 }
 
 function colour(positionAt: (offset: number) => Position, index: number, match: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[]) {
 	if (!/`[^\W_](:.|.:|:)`/.exec(match)) {
-		const startPos = positionAt(index);
-		const innerStartPos = positionAt(index + 2);
-		const innerEndPos = positionAt(index + match.length - 1);
-		const endPos = positionAt(index + match.length);
+		const startPos = positionAt(index)
+		const innerStartPos = positionAt(index + 2)
+		const innerEndPos = positionAt(index + match.length - 1)
+		const endPos = positionAt(index + match.length)
 
-		let colourRanges = coloursRanges.get(match[1]);
+		let colourRanges = coloursRanges.get(match[1])
 
 		if (!colourRanges) {
-			colourRanges = [];
-			coloursRanges.set(match[1], colourRanges);
+			colourRanges = []
+			coloursRanges.set(match[1], colourRanges)
 		}
 
-		colourRanges.push(new Range(innerStartPos, innerEndPos));
-		strikeRanges.push(new Range(startPos, innerStartPos));
-		strikeRanges.push(new Range(innerEndPos, endPos));
+		colourRanges.push(new Range(innerStartPos, innerEndPos))
+		strikeRanges.push(new Range(startPos, innerStartPos))
+		strikeRanges.push(new Range(innerEndPos, endPos))
 	}
 }
 
 function addDecoration(decorationRenderOptions: DecorationRenderOptions, ranges: Range[]) {
-	const decoration = window.createTextEditorDecorationType(decorationRenderOptions);
+	const decoration = window.createTextEditorDecorationType(decorationRenderOptions)
 
-	decorations.push(decoration);
-	window.activeTextEditor?.setDecorations(decoration, ranges);
+	decorations.push(decoration)
+	window.activeTextEditor?.setDecorations(decoration, ranges)
 }
 
 function* matches(regex: RegExp, string: string) {
-	let current;
+	let current
 
-	while (current = regex.exec(string)) {
-		yield { index: current.index, match: current[0] };
-	}
+	while (current = regex.exec(string))
+		yield { index: current.index, match: current[0] }
 }
