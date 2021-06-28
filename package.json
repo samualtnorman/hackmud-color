@@ -50,6 +50,9 @@
 		"pretest": "npm run compile && npm run lint",
 		"test": "node ./out/test/runTest.js"
 	},
+	"dependencies": {
+		"typescript": "^4.3.4"
+	},
 	"devDependencies": {
 		"@types/glob": "^7.1.3",
 		"@types/mocha": "^8.2.2",
@@ -60,7 +63,6 @@
 		"eslint": "^7.29.0",
 		"glob": "^7.1.7",
 		"mocha": "^9.0.1",
-		"typescript": "^4.3.4",
 		"vscode-test": "^1.5.2"
 	}
 }
