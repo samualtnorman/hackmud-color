@@ -51,7 +51,7 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"dependencies": {
-		"typescript": "^4.3.4"
+		"typescript": "^4.3.5"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.3",
