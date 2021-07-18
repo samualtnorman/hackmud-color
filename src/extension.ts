@@ -167,7 +167,7 @@ function findAndProcess(text: string, stringRanges: Range[], positionAt: (offset
 	function traverse(node: Node) {
 		if (node.kind == SyntaxKind.TemplateHead || node.kind == SyntaxKind.TemplateMiddle)
 			processString(stringRanges, positionAt, node.getStart() + 1, node.getText().slice(1, -2), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges)
-		else if (node.kind == SyntaxKind.StringLiteral || node.kind == SyntaxKind.TemplateTail)
+		else if (node.kind == SyntaxKind.StringLiteral || node.kind == SyntaxKind.TemplateTail || node.kind == SyntaxKind.FirstTemplateToken)
 			processString(stringRanges, positionAt, node.getStart() + 1, node.getText().slice(1, -1), coloursRanges, strikeRanges, scriptOrangeRanges, scriptGreyRanges, scriptGreenRanges, keyRanges, valueRanges)
 		else
 			node.forEachChild(traverse)
