@@ -241,6 +241,36 @@ function processString(stringRanges: Range[], positionAt: (offset: number) => Po
 
 		strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)))
 	}
+
+	for (const { index, match } of matches(/@[a-z_][a-z_0-9]{0,24}/gs, stringMatch)) {
+		{
+			let colourRanges = coloursRanges.get("C")
+
+			if (!colourRanges) {
+				colourRanges = []
+				coloursRanges.set("C", colourRanges)
+			}
+
+			colourRanges.push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + 1)))
+		}
+
+		let hash = "_gpketocajvwqyfbnlhurmdisxz".indexOf(match[1])
+
+		for (const [ i, char ] of [ ...match.slice(2) ].entries())
+			hash += "qibaf925sr76ngx1hmyt0vuw_j8ozdp4kec3l".indexOf(char) + i
+
+		const colourID = "JKMWLB"[hash % 6]
+
+		// colourRanges vs coloursRanges is really stupid naming
+		let colourRanges = coloursRanges.get(colourID)
+
+		if (!colourRanges) {
+			colourRanges = []
+			coloursRanges.set(colourID, colourRanges)
+		}
+
+		colourRanges.push(new Range(positionAt(stringIndex + index + 1), positionAt(stringIndex + index + match.length)))
+	}
 }
 
 function colour(positionAt: (offset: number) => Position, index: number, match: string, coloursRanges: Map<string, Range[]>, strikeRanges: Range[]) {
