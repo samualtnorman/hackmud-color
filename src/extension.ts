@@ -91,6 +91,8 @@ let config = workspace.getConfiguration("hackmud-color")
 export function activate() {
 	window.onDidChangeActiveTextEditor(decorate)
 	workspace.onDidChangeTextDocument(decorate)
+	workspace.onDidCloseTextDocument(decorate)
+	workspace.onDidOpenTextDocument(decorate)
 
 	workspace.onDidChangeConfiguration(() => {
 		config = workspace.getConfiguration("hackmud-color")
