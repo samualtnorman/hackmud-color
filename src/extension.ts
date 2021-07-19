@@ -226,16 +226,7 @@ function decorate() {
 				}
 
 				for (const { index, match } of matches(/@[a-z_][a-z_0-9]{0,24}/gs, stringMatch)) {
-					{
-						let colourRanges = coloursRanges.get("C")
-
-						if (!colourRanges) {
-							colourRanges = []
-							coloursRanges.set("C", colourRanges)
-						}
-
-						colourRanges.push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + 1)))
-					}
+					coloursRanges.get("C").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + 1)))
 
 					let hash = "_gpketocajvwqyfbnlhurmdisxz".indexOf(match[1])
 
@@ -244,15 +235,7 @@ function decorate() {
 
 					const colourID = "JKMWLB"[hash % 6]
 
-					// colourRanges vs coloursRanges is really stupid naming
-					let colourRanges = coloursRanges.get(colourID)
-
-					if (!colourRanges) {
-						colourRanges = []
-						coloursRanges.set(colourID, colourRanges)
-					}
-
-					colourRanges.push(new Range(positionAt(stringIndex + index + 1), positionAt(stringIndex + index + match.length)))
+					coloursRanges.get(colourID).push(new Range(positionAt(stringIndex + index + 1), positionAt(stringIndex + index + match.length)))
 				}
 			}
 		} break
@@ -285,14 +268,7 @@ function decorate() {
 			const innerEndPos = positionAt(index + match.length - 1)
 			const endPos = positionAt(index + match.length)
 
-			let colourRanges = coloursRanges.get(match[1])
-
-			if (!colourRanges) {
-				colourRanges = []
-				coloursRanges.set(match[1], colourRanges)
-			}
-
-			colourRanges.push(new Range(innerStartPos, innerEndPos))
+			coloursRanges.get(match[1]).push(new Range(innerStartPos, innerEndPos))
 			strikeRanges.push(new Range(startPos, innerStartPos))
 			strikeRanges.push(new Range(innerEndPos, endPos))
 		}
