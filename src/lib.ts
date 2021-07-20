@@ -7,7 +7,7 @@ export class DynamicMap<K, V> extends Map<K, V> {
 
 		const value = this.fallbackHandler(key)
 
-		this.set(key, value)
+		super.set(key, value)
 
 		return value
 	}
