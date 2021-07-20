@@ -225,7 +225,7 @@ function decorate() {
 					strikeRanges.push(new Range(positionAt(offset), positionAt(offset + 2)))
 				}
 
-				for (const { index, match } of matches(/@[a-z_][a-z_0-9]{0,24}/gs, stringMatch)) {
+				for (const { index, match } of matches(/@[a-z_][a-z_0-9]{0,24}(?![a-z_0-9])/gs, stringMatch)) {
 					coloursRanges.get("C").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + 1)))
 
 					let hash = 0
