@@ -2,8 +2,7 @@ import { workspace, window, Range, TextEditorDecorationType, commands, Position,
 import { createSourceFile, ScriptTarget, SyntaxKind, Node } from "typescript"
 import { DynamicMap, matches } from "./lib"
 
-// FIXME 5 - 9 appear as default S on forums but here it's always orange
-const colourMap: Record<string, string> = {
+const gameColourCodesToHex: Record<string, string> = {
 	0: "#CACACA",
 	1: "#FFFFFF",
 	2: "#1EFF00",
@@ -66,6 +65,14 @@ const colourMap: Record<string, string> = {
 	X: "#FF0070",
 	Y: "#FF6A98",
 	Z: "#0C112B"
+}
+
+const forumColourCodesToHex: Record<string, string> = {
+	...gameColourCodesToHex,
+	6: "#7AB2F4",
+	7: "#7AB2F4",
+	8: "#7AB2F4",
+	9: "#7AB2F4"
 }
 
 const trustUsers: string[] = [
@@ -136,11 +143,14 @@ function decorate() {
 
 			createSourceFile("index.ts", text, ScriptTarget.ESNext, true).forEachChild(traverse)
 
-			addDecoration({ color: colourMap.F }, scriptOrangeRanges)
-			addDecoration({ color: colourMap.C }, scriptGreyRanges)
-			addDecoration({ color: colourMap.L }, scriptGreenRanges)
-			addDecoration({ color: colourMap.N }, keyRanges)
-			addDecoration({ color: colourMap.V }, valueRanges)
+			addDecoration({ color: gameColourCodesToHex.F }, scriptOrangeRanges)
+			addDecoration({ color: gameColourCodesToHex.C }, scriptGreyRanges)
+			addDecoration({ color: gameColourCodesToHex.L }, scriptGreenRanges)
+			addDecoration({ color: gameColourCodesToHex.N }, keyRanges)
+			addDecoration({ color: gameColourCodesToHex.V }, valueRanges)
+
+			for (const [ colourID, ranges ] of coloursRanges)
+				addDecoration({ color: gameColourCodesToHex[colourID] }, ranges)
 
 			function traverse(node: Node) {
 				let stringMatch
@@ -251,15 +261,15 @@ function decorate() {
 			for (const { index, match } of matches(/https:\/\/(www\.)?hackmud.com\/\S*/g, text))
 				linkRanges.push(new Range(positionAt(index), positionAt(index + match.length)))
 
-			addDecoration({ color: colourMap.P }, linkRanges)
+			addDecoration({ color: gameColourCodesToHex.P }, linkRanges)
+
+			for (const [ colourID, ranges ] of coloursRanges)
+				addDecoration({ color: forumColourCodesToHex[colourID] }, ranges)
 		} break
 	}
 
-	for (const [ colourID, ranges ] of coloursRanges)
-		addDecoration({ color: colourMap[colourID] }, ranges)
-
 	addDecoration({ textDecoration: "line-through", opacity: "0.3" }, strikeRanges)
-	addDecoration({ color: colourMap.S }, stringRanges)
+	addDecoration({ color: gameColourCodesToHex.S }, stringRanges)
 
 	function colour(index: number, match: string) {
 		if (!/`[^\W_](:.|.:|:)`/.exec(match)) {
