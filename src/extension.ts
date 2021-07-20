@@ -228,10 +228,10 @@ function decorate() {
 				for (const { index, match } of matches(/@[a-z_][a-z_0-9]{0,24}/gs, stringMatch)) {
 					coloursRanges.get("C").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + 1)))
 
-					let hash = "_gpketocajvwqyfbnlhurmdisxz".indexOf(match[1])
+					let hash = 0
 
-					for (const [ i, char ] of [ ...match.slice(2) ].entries())
-						hash += "qibaf925sr76ngx1hmyt0vuw_j8ozdp4kec3l".indexOf(char) + i
+					for (const [ i, char ] of [ ...match.slice(1) ].entries())
+						hash += (hash >> 1) + hash + "abcdefghijklmnopqrstuvwxyz_0123456789".indexOf(char) + 1
 
 					const colourID = "JKMWLB"[hash % 6]
 
