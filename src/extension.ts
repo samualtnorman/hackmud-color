@@ -247,6 +247,27 @@ function decorate() {
 
 					coloursRanges.get(colourID).push(new Range(positionAt(stringIndex + index + 1), positionAt(stringIndex + index + match.length)))
 				}
+
+				for (const { index, match } of matches(/DATA_(?:ALPHA|BETA|GAMMA|DELTA|ZETA|THETA|LAMBDA|EPSILON)_\d/gs, stringMatch))
+					coloursRanges.get("q").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + match.length)))
+
+				for (const { index, match } of matches(/KIN_(?:ALPHA|BETA|GAMMA|DELTA|ZETA|THETA|LAMBDA|EPSILON)_\d/gs, stringMatch))
+					coloursRanges.get("N").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + match.length)))
+
+				for (const { index, match } of matches(/FORM_(?:ALPHA|BETA|GAMMA|DELTA|ZETA|THETA|LAMBDA|EPSILON)_\d/gs, stringMatch))
+					coloursRanges.get("l").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + match.length)))
+
+				for (const { index, match } of matches(/VOID_(?:ALPHA|BETA|GAMMA|DELTA|ZETA|THETA|LAMBDA|EPSILON)_\d/gs, stringMatch))
+					coloursRanges.get("I").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + match.length)))
+
+				for (const { index, match } of matches(/CHAOS_(?:ALPHA|BETA|GAMMA|DELTA|ZETA|THETA|LAMBDA|EPSILON)_\d/gs, stringMatch))
+					coloursRanges.get("D").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + match.length)))
+
+				for (const { index, match } of matches(/CHOICE_(?:ALPHA|BETA|GAMMA|DELTA|ZETA|THETA|LAMBDA|EPSILON)_\d/gs, stringMatch))
+					coloursRanges.get("F").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + match.length)))
+
+				for (const { index, match } of matches(/(?:HJG|VNP|NGC|K|SPC)_\d\d\d\d/gs, stringMatch))
+					coloursRanges.get("C").push(new Range(positionAt(stringIndex + index), positionAt(stringIndex + index + match.length)))
 			}
 		} break
 
