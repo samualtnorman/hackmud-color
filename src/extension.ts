@@ -241,7 +241,7 @@ function decorate() {
 					let hash = 0
 
 					for (const [ i, char ] of [ ...match.slice(1) ].entries())
-						hash += (hash >> 1) + hash + "abcdefghijklmnopqrstuvwxyz_0123456789".indexOf(char) + 1
+						hash += (hash >> 1) + hash + "xi1_8ratvsw9hlbgm02y5zpdcn7uekof463qj".indexOf(char) + 1
 
 					const colourID = "JKMWLB"[hash % 6]
 
