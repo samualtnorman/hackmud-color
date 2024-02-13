@@ -1,11 +1,23 @@
 {
+	"include": [ "*" ],
 	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es6",
-		"outDir": "out",
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true
-	},
-	"exclude": [ "node_modules", ".vscode-test" ]
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"strict": true,
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"resolveJsonModule": true,
+		"types": [ "node", "@total-typescript/ts-reset" ],
+		"noEmit": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"target": "ES2022",
+		"skipLibCheck": true
+	}
 }

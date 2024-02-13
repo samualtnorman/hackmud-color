@@ -1,8 +1,8 @@
-import { workspace, window, Range, TextEditorDecorationType, commands, Position, DecorationRenderOptions } from "vscode"
-import { createSourceFile, ScriptTarget, SyntaxKind, Node } from "typescript"
-import { DynamicMap, matches } from "./lib"
+import { DynamicMap } from "@samual/lib/DynamicMap"
+import { createSourceFile, ScriptTarget, type Node, SyntaxKind } from "typescript"
+import { commands, window, workspace, type DecorationRenderOptions, Range, type TextEditorDecorationType } from "vscode"
 
-const gameColourCodesToHex: Record<string, string> = {
+const gameColourCodesToHex = {
 	0: "#CACACA",
 	1: "#FFFFFF",
 	2: "#1EFF00",
@@ -65,15 +65,17 @@ const gameColourCodesToHex: Record<string, string> = {
 	X: "#FF0070",
 	Y: "#FF6A98",
 	Z: "#0C112B"
-}
+} satisfies Record<string, string>
 
-const forumColourCodesToHex: Record<string, string> = {
+type GameColourCode = `${keyof typeof gameColourCodesToHex}`
+
+const forumColourCodesToHex = {
 	...gameColourCodesToHex,
 	6: "#7AB2F4",
 	7: "#7AB2F4",
 	8: "#7AB2F4",
 	9: "#7AB2F4"
-}
+} satisfies Record<GameColourCode, string>
 
 const trustUsers: string[] = [
 	"accts",
@@ -128,7 +130,7 @@ function decorate() {
 
 	const { positionAt, languageId } = window.activeTextEditor.document
 	const text = window.activeTextEditor.document.getText()
-	const coloursRanges = new DynamicMap<string, Range[]>(() => [])
+	const coloursRanges = new DynamicMap<GameColourCode, Range[]>(() => [])
 	const stringRanges: Range[] = []
 	const strikeRanges: Range[] = []
 
@@ -187,7 +189,9 @@ function decorate() {
 				}
 
 				// Thank you @Dart#0719 and @Aniketos#3964 for help with regex
-				for (let { index, match } of matches(/(?<!#[^s]?.*)(?:#s\.)?([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)/g, stringMatch)) {
+				for (let { index, match } of
+					matches(/(?<!#[^s]?.*)(?:#s\.)?([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)/g, stringMatch)
+				) {
 					if (match[0] === "#") {
 						index += 3
 						match = match.slice(3)
@@ -195,10 +199,13 @@ function decorate() {
 
 					const offset = stringIndex + index
 
-					const [user] = match.split(".");
+					const user = match.split(".")[0]!;
 
-					(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges).push(new Range(positionAt(offset), positionAt(offset + user.length)))
-					scriptGreenRanges.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)))
+					(trustUsers.includes(user) ? scriptOrangeRanges : scriptGreyRanges)
+						.push(new Range(positionAt(offset), positionAt(offset + user.length)))
+
+					scriptGreenRanges
+						.push(new Range(positionAt(offset + user.length + 1), positionAt(offset + match.length)))
 				}
 
 				for (const { index, match } of matches(/([a-zA-Z_]\w*|"[^"]+?") ?: ?(\\?".*?"|[0-9]+|true|false|{|\[)/g, stringMatch)) {
@@ -240,12 +247,13 @@ function decorate() {
 
 					let hash = 0
 
-					for (const [ i, char ] of [ ...match.slice(1) ].entries())
+					for (const [ _, char ] of [ ...match.slice(1) ].entries())
 						hash += (hash >> 1) + hash + "xi1_8ratvsw9hlbgm02y5zpdcn7uekof463qj".indexOf(char) + 1
 
-					const colourID = "JKMWLB"[hash % 6]
-
-					coloursRanges.get(colourID).push(new Range(positionAt(stringIndex + index + 1), positionAt(stringIndex + index + match.length)))
+					coloursRanges.get("JKMWLB"[hash % 6] as GameColourCode).push(new Range(
+						positionAt(stringIndex + index + 1),
+						positionAt(stringIndex + index + match.length)
+					))
 				}
 
 				for (const { index, match } of matches(/DATA_(?:ALPHA|BETA|GAMMA|DELTA|ZETA|THETA|LAMBDA|EPSILON)_\d/gs, stringMatch))
@@ -299,7 +307,7 @@ function decorate() {
 			const innerEndPos = positionAt(index + match.length - 1)
 			const endPos = positionAt(index + match.length)
 
-			coloursRanges.get(match[1]).push(new Range(innerStartPos, innerEndPos))
+			coloursRanges.get(match[1] as GameColourCode).push(new Range(innerStartPos, innerEndPos))
 			strikeRanges.push(new Range(startPos, innerStartPos))
 			strikeRanges.push(new Range(innerEndPos, endPos))
 		}
@@ -311,4 +319,11 @@ function addDecoration(decorationRenderOptions: DecorationRenderOptions, ranges:
 
 	decorations.push(decoration)
 	window.activeTextEditor?.setDecorations(decoration, ranges)
+}
+
+function* matches(regex: RegExp, string: string) {
+	let current
+
+	while (current = regex.exec(string))
+		yield { index: current.index, match: current[0] }
 }
