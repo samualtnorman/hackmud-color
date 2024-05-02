@@ -1,6 +1,8 @@
 # Hackmud Color
 Colour strings as they appear in the game, and colours plaintext as it appears on the forums. 
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/R6R0XN5CX)
+
 Before:
 ![before](images/before.png)
 
